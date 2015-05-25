@@ -2,12 +2,12 @@ FROM ubuntu:trusty
 MAINTAINER ClassCat Co.,Ltd. <support@classcat.com>
 
 ########################################################################
-# ClassCat/Ubuntu-Supervisord2 Dockerfile
+# ClassCat/Dovecot Dockerfile
 #   Maintained by ClassCat Co.,Ltd ( http://www.classcat.com/ )
 ########################################################################
 
 #--- HISTORY -----------------------------------------------------------
-# 06-may-15 : fixed.
+# 25-may-15 : quay.io
 #-----------------------------------------------------------------------
 
 RUN apt-get update && apt-get -y upgrade \
@@ -25,6 +25,15 @@ RUN sed -ri "s/^PermitRootLogin\s+.*/PermitRootLogin yes/" /etc/ssh/sshd_config
 
 ADD assets/supervisord.conf /etc/supervisor/supervisord.conf
 
-EXPOSE 22
+ENV DEBIAN_FRONTEND noninteractive
 
-CMD echo "root:${ROOT_PASSWORD}" | chpasswd; /usr/sbin/sshd -D
+RUN apt-get update && apt-get install -y dovecot-core dovecot-pop3d dovecot-imapd
+
+WORKDIR /opt
+ADD assets/cc-init.sh /opt/cc-init.sh
+
+ADD assets/dovecot /etc/init.d/dovecot
+
+EXPOSE 22 110 143
+
+CMD /opt/cc-init.sh && /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
